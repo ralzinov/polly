@@ -47,7 +47,7 @@ const handleStartMessage = (bot, db) => async (ctx) => {
 }
 
 const startPolling = async (bot, db, config) => {
-    const loopIntervalSec = 1;
+    const loopIntervalSec = 10;
     const pollEvery = async (timeSec) => {
         if (bot.botInfo) {
             const users = await db.get('users').value();
