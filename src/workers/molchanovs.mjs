@@ -96,9 +96,14 @@ const fetchData = async (id) => {
     return mapData(html.parse(response.SLIDER.BODY), trainers);
 };
 
-const formatDate = (date) => (new Date(date)).toLocaleDateString('en', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-});
+const formatDate = (date) => {
+    const dateJS = new Date(date);
+    const dateStr = dateJS.toLocaleDateString('en', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    const timeStr = dateJS.toLocaleTimeString('ru-RU');
+    return `${dateStr} - ${timeStr}`;
+};
 
 const formatMessage = (id, entries) => {
     const poolConfig = _.find(POOLS, {id});
@@ -115,13 +120,15 @@ const formatMessage = (id, entries) => {
 };
 
 const worker = async () => {
-    const pools = Object.values(POOLS);
+    const pools = [POOLS.CHAIKA];
     const data = await Promise.all(pools.map(({id, label}) => {
         return fetchData(id).catch((e) => console.error(`Failed to fetch data for "${label}"`, e));
     }));
     return pools.reduce((acc, {id, trainings}, index) => ({
         ...acc,
-        [id]: data[index].filter(({trainingType}) => trainings.includes(trainingType))
+        [id]: data[index]?.filter(({trainingType, trainer}) => {
+            return trainings.includes(trainingType) && trainer === 'Папуша Александра'
+        })
     }), {});
 };
 
@@ -139,7 +146,8 @@ const getDiff = (prevData, data) => {
 
 const notifier = (bot, users = {}) => async (prevData, data) => {
     let result = false;
-    Object.entries(data).forEach(([id, message], messageIndex) => {
+
+    Object.entries(data || {}).forEach(([id, message], messageIndex) => {
         if (!_.isEqual(message, prevData?.[id])) {
             const diff = getDiff(prevData?.[id], message);
             const messageText = formatMessage(id, diff);
